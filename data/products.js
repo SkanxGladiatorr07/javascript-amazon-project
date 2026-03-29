@@ -656,5 +656,35 @@ const products = [
       "apparel",
       "mens"
     ]
+  },
+  {
+    id: "backpack-01",
+    image: "images/products/backpack.jpg",
+    name: "Trail Day Backpack - 28L",
+    rating: {
+      stars: 4.5,
+      count: 194
+    },
+    priceCents: 4299,
+    keywords: [
+      "backpack",
+      "travel",
+      "outdoors"
+    ]
+  },
+  {
+    id: "umbrella-01",
+    image: "images/products/umbrella.jpg",
+    name: "Windproof Travel Umbrella",
+    rating: {
+      stars: 4,
+      count: 88
+    },
+    priceCents: 1899,
+    keywords: [
+      "umbrella",
+      "rain",
+      "accessories"
+    ]
   }
 ];

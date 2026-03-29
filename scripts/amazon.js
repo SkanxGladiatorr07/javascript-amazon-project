@@ -1,4 +1,5 @@
 let productsHTML = '';
+const addedMessageTimeoutIds = {};
 
 products.forEach((product) => {
     productsHTML += `<div class="product-container">
@@ -40,7 +41,7 @@ products.forEach((product) => {
 
           <div class="product-spacer"></div>
 
-          <div class="added-to-cart">
+          <div class="added-to-cart js-added-to-cart-${product.id}">
             <img src="images/icons/checkmark.png">
             Added
           </div>
@@ -56,9 +57,21 @@ document.querySelector('.js-product-grid').innerHTML = productsHTML;
 
 document.querySelectorAll('.js-add-to-cart').forEach( (button) => {
     button.addEventListener('click',() => {
-        const productId = button.dataset.productId;
+        const { productId } = button.dataset;
     const quantitySelector = document.querySelector(`.js-quantity-selector[data-product-id="${productId}"]`);
-    const selectedQuantity = Number(quantitySelector.value);
+    const quantity = Number(quantitySelector.value);
+    const addedMessage = document.querySelector(`.js-added-to-cart-${productId}`);
+
+    addedMessage.classList.add('added-to-cart-visible');
+
+    if (addedMessageTimeoutIds[productId]) {
+      clearTimeout(addedMessageTimeoutIds[productId]);
+    }
+
+    addedMessageTimeoutIds[productId] = setTimeout(() => {
+      addedMessage.classList.remove('added-to-cart-visible');
+      delete addedMessageTimeoutIds[productId];
+    }, 2000);
         
         let matchingItem;
 
@@ -69,12 +82,12 @@ document.querySelectorAll('.js-add-to-cart').forEach( (button) => {
         });
         
         if (matchingItem){
-          matchingItem.quantity += selectedQuantity;
+          matchingItem.quantity += quantity;
         }
         else {
         cart.push({
-            productId: productId,
-          quantity: selectedQuantity
+            productId,
+          quantity
     });}
 
     let cartQuantity = 0;
@@ -85,6 +98,5 @@ document.querySelectorAll('.js-add-to-cart').forEach( (button) => {
 
     document.querySelector('.js-cart-quantity').innerHTML = cartQuantity;
 
-    console.log(cart);
     })
     })
