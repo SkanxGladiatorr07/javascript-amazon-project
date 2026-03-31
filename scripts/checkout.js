@@ -1,16 +1,17 @@
 import {
   cart,
   removeFromCart,
-  updateCartItemQuantity
+  updateCartItemQuantity,
+  updateDeliveryOption
 } from '../data/cart.js';
 import { products } from '../data/products.js';
 import { deliveryOptions } from '../data/deliveryOptions.js';
 import formatCurrency from './utils/money.js';
 import dayjs from 'https://unpkg.com/supersimpledev@8.5.0/dayjs/esm/index.js';
+import { renderPaymentSummary } from './utils/paymentSummary.js';
 
-const SHIPPING_COST_CENTS = 499;
-const TAX_RATE = 0.1;
 const today = dayjs();
+
 
 function getDeliveryDateText(deliveryDays) {
   return today.add(deliveryDays, 'days').format('dddd, MMMM D');
@@ -49,7 +50,8 @@ function getDeliveryOptionsHTML(productId) {
           ${index === 0 ? 'checked' : ''}
           class="delivery-option-input"
           name="${deliveryGroupName}"
-          value="${deliveryOption.id}">
+          value="${deliveryOption.id}"
+          data-product-id="${productId}">
         <div>
           <div class="delivery-option-date">
             ${deliveryDateText}
@@ -128,36 +130,6 @@ function getCartItemHTMLByProductId(productId, quantity) {
     </div>`;
 }
 
-function renderPaymentSummary() {
-  const itemPriceCents = cart.reduce((total, cartItem) => {
-    const product = getMatchingProductById(cartItem.productId);
-
-    if (!product) {
-      return total;
-    }
-
-    return total + product.priceCents * cartItem.quantity;
-  }, 0);
-
-  const shippingCostCents = cart.length > 0 ? SHIPPING_COST_CENTS : 0;
-  const totalBeforeTaxCents = itemPriceCents + shippingCostCents;
-  const taxCents = Math.round(totalBeforeTaxCents * TAX_RATE);
-  const totalCents = totalBeforeTaxCents + taxCents;
-
-  const summaryMoneyElements = document.querySelectorAll('.payment-summary-money');
-  if (summaryMoneyElements.length >= 5) {
-    summaryMoneyElements[0].innerText = `$${formatCurrency(itemPriceCents)}`;
-    summaryMoneyElements[1].innerText = `$${formatCurrency(shippingCostCents)}`;
-    summaryMoneyElements[2].innerText = `$${formatCurrency(totalBeforeTaxCents)}`;
-    summaryMoneyElements[3].innerText = `$${formatCurrency(taxCents)}`;
-    summaryMoneyElements[4].innerText = `$${formatCurrency(totalCents)}`;
-  }
-
-  const firstSummaryRowLabel = document.querySelector('.payment-summary-row div');
-  if (firstSummaryRowLabel) {
-    firstSummaryRowLabel.innerText = `Items (${getCartQuantity()}):`;
-  }
-}
 
 function updateHeaderItemCount() {
   const totalQuantity = getCartQuantity();
@@ -248,6 +220,16 @@ function attachCheckoutEventListeners() {
       if (saveLink) {
         saveLink.click();
       }
+    });
+  });
+
+  document.querySelectorAll('.delivery-option-input').forEach((input) => {
+    input.addEventListener('change', () => {
+      const deliveryOptionId = input.value;
+      const productId = input.dataset.productId;
+
+      updateDeliveryOption(productId, deliveryOptionId);
+      renderPaymentSummary();
     });
   });
 }

@@ -1,8 +1,4 @@
-export let cart = JSON.parse(localStorage.getItem('car
-
-if (!cart) {
-	cart = [];
-}
+export let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
 cart = cart.map((cartItem) => {
 	if (cartItem.deliveryOptionId) {
@@ -55,5 +51,16 @@ export function updateCartItemQuantity(productId, newQuantity) {
 	}
 
 	matchingItem.quantity = newQuantity;
+	saveToStorage();
+}
+
+export function updateDeliveryOption(productId, deliveryOptionId) {
+	const matchingItem = cart.find((item) => item.productId === productId);
+
+	if (!matchingItem) {
+		return;
+	}
+
+	matchingItem.deliveryOptionId = deliveryOptionId;
 	saveToStorage();
 }
