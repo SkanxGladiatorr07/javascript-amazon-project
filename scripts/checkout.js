@@ -14,7 +14,18 @@ const today = dayjs();
 
 
 function getDeliveryDateText(deliveryDays) {
-  return today.add(deliveryDays, 'days').format('dddd, MMMM D');
+  let deliveryDate = today.clone();
+  let daysAdded = 0;
+  
+  while (daysAdded < deliveryDays) {
+    deliveryDate = deliveryDate.add(1, 'days');
+    // Skip weekends: 0 = Sunday, 6 = Saturday
+    if (deliveryDate.day() !== 0 && deliveryDate.day() !== 6) {
+      daysAdded++;
+    }
+  }
+  
+  return deliveryDate.format('dddd, MMMM D');
 }
 
 function getCartQuantity() {
