@@ -1,3 +1,5 @@
+import { Currency } from './Currency.js';
+
 export default function formatCurrency(priceCents) {
-  return (priceCents / 100).toFixed(2);
+  return Currency.formatCurrency(priceCents);
 }
