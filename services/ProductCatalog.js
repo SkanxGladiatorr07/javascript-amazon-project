@@ -1,21 +1,29 @@
 import { BaseCollectionService } from './BaseCollectionService.js';
 import { Product, ProductRating } from '../models/Product.js';
-import { products as productsData } from '../data/products.js';
+import { loadProducts } from '../data/products.js';
 
 export class ProductCatalog extends BaseCollectionService {
   constructor() {
-    super(
-      productsData.map((productData) => new Product(
-        productData.id,
-        productData.image,
-        productData.name,
-        new ProductRating(productData.rating.stars, productData.rating.count),
-        productData.priceCents,
-        productData.keywords,
-        productData.type || null,
-        productData.sizeChartLink || null
-      ))
+    super([]);
+  }
+
+  buildProduct(productData) {
+    return new Product(
+      productData.id,
+      productData.image,
+      productData.name,
+      new ProductRating(productData.rating.stars, productData.rating.count),
+      productData.priceCents,
+      productData.keywords,
+      productData.type || null,
+      productData.sizeChartLink || null
     );
+  }
+
+  async loadProducts() {
+    const productsData = await loadProducts();
+    this.items = productsData.map((productData) => this.buildProduct(productData));
+    return this.items;
   }
 
   getAllProducts() {

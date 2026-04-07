@@ -4,4 +4,10 @@ import { ProductRenderer } from '../renderers/ProductRenderer.js';
 
 const productRenderer = new ProductRenderer(productCatalog, cart);
 
-productRenderer.init();
+productCatalog.loadProducts()
+	.then(() => {
+		productRenderer.init();
+	})
+	.catch((error) => {
+		console.error('Unable to load products.', error);
+	});

@@ -7,4 +7,10 @@ import { CheckoutRenderer } from '../renderers/CheckoutRenderer.js';
 const paymentSummary = new PaymentSummary(0.1);
 const checkoutRenderer = new CheckoutRenderer(cart, productCatalog, deliveryService, paymentSummary);
 
-checkoutRenderer.init();
+productCatalog.loadProducts()
+	.then(() => {
+		checkoutRenderer.init();
+	})
+	.catch((error) => {
+		console.error('Unable to load products.', error);
+	});
