@@ -1,29 +1,40 @@
 export let products = [];
 
+function getProductsUrl() {
+  if (typeof window !== 'undefined') {
+    return '/backend/products.json';
+  }
+
+  return new URL('../backend/products.json', import.meta.url).href;
+}
+
+function loadProductsFromFile() {
+  return import('node:fs/promises')
+    .then((fs) => fs.readFile(new URL('../backend/products.json', import.meta.url), 'utf-8'))
+    .then((fileContent) => JSON.parse(fileContent));
+}
+
 export function loadProducts() {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-
-    xhr.addEventListener('load', () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          products = JSON.parse(xhr.responseText);
-          resolve(products);
-        } catch (error) {
-          reject(new Error('Failed to parse product data.'));
-        }
-
-        return;
+  return fetch(getProductsUrl())
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Failed to load products: ${response.status}`);
       }
 
-      reject(new Error(`Failed to load products: ${xhr.status}`));
-    });
+      return response.json();
+    })
+    .then((productsData) => {
+      products = productsData;
+      return products;
+    })
+    .catch((error) => {
+      if (typeof window === 'undefined') {
+        return loadProductsFromFile().then((productsData) => {
+          products = productsData;
+          return products;
+        });
+      }
 
-    xhr.addEventListener('error', () => {
-      reject(new Error('Network error while loading products.'));
+      throw new Error(`Network error while loading products. ${error.message}`);
     });
-
-    xhr.open('GET', '/backend/products.json');
-    xhr.send();
-  });
 }

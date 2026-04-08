@@ -29,12 +29,28 @@ export class Cart extends BaseCollection {
       return;
     }
 
-    const loadedItems = JSON.parse(savedCart).map((item) => ({
+    try {
+      const loadedItems = JSON.parse(savedCart).map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        deliveryOptionId: item.deliveryOptionId || '1'
+      }));
+      this.items.splice(0, this.items.length, ...loadedItems);
+    }
+    catch {
+      this.items.splice(0, this.items.length);
+    }
+  }
+
+  setItems(items = []) {
+    const normalizedItems = items.map((item) => ({
       productId: item.productId,
       quantity: item.quantity,
       deliveryOptionId: item.deliveryOptionId || '1'
     }));
-    this.items.splice(0, this.items.length, ...loadedItems);
+
+    this.items.splice(0, this.items.length, ...normalizedItems);
+    this.saveToStorage();
   }
 
   saveToStorage() {
