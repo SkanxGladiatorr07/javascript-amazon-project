@@ -10,49 +10,65 @@ function getCartUrl() {
 	return new URL('../backend/cart.json', import.meta.url).href;
 }
 
-function loadCartFromFile() {
-	return import('node:fs/promises')
-		.then((fs) => fs.readFile(new URL('../backend/cart.json', import.meta.url), 'utf-8'))
-		.then((fileContent) => JSON.parse(fileContent));
+async function loadCartFromFile() {
+	try {
+		const fs = await import('node:fs/promises');
+		const fileContent = await fs.readFile(new URL('../backend/cart.json', import.meta.url), 'utf-8');
+		const cartData = JSON.parse(fileContent);
+
+		if (!Array.isArray(cartData)) {
+			throw new Error('Cart data must be an array.');
+		}
+
+		return cartData;
+	}
+	catch (error) {
+		throw new Error(`Failed to load cart from file fallback. ${error.message}`);
+	}
 }
 
-export function loadCart() {
+export async function loadCart() {
 	if (typeof window !== 'undefined') {
 		cartInstance.loadFromStorage();
 
 		if (cart.length > 0) {
-			return Promise.resolve(cart);
+			return cart;
 		}
 	}
 
-	return fetch(getCartUrl())
-		.then((response) => {
-			if (!response.ok) {
-				throw new Error(`Failed to load cart: ${response.status}`);
-			}
+	try {
+		const response = await fetch(getCartUrl());
 
-			return response.json();
-		})
-		.then((cartData) => {
-			cartInstance.setItems(cartData);
-			return cart;
-		})
-		.catch(() => {
-			if (typeof window === 'undefined') {
-				return loadCartFromFile()
-					.then((cartData) => {
-						cartInstance.setItems(cartData);
-						return cart;
-					})
-					.catch(() => {
-						cartInstance.loadFromStorage();
-						return cart;
-					});
-			}
+		if (!response.ok) {
+			throw new Error(`Failed to load cart: ${response.status}`);
+		}
 
-			cartInstance.loadFromStorage();
-			return cart;
-		});
+		const cartData = await response.json();
+
+		if (!Array.isArray(cartData)) {
+			throw new Error('Cart response must be an array.');
+		}
+
+		cartInstance.setItems(cartData);
+		return cart;
+	}
+	catch (fetchError) {
+		if (typeof window === 'undefined') {
+			try {
+				const cartData = await loadCartFromFile();
+				cartInstance.setItems(cartData);
+				return cart;
+			}
+			catch (fileError) {
+				cartInstance.loadFromStorage();
+				throw new Error(`Unable to load cart in Node environment. ${fileError.message}`);
+			}
+		}
+
+		cartInstance.loadFromStorage();
+		console.error('Unable to load cart from network. Using local storage cart.', fetchError);
+		return cart;
+	}
 }
 
 export function addToCart(productId, quantity) {

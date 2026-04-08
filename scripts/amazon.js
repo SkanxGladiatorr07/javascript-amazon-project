@@ -5,10 +5,14 @@ import { loadCart } from '../data/cart.js';
 
 const productRenderer = new ProductRenderer(productCatalog, cart);
 
-Promise.all([productCatalog.loadProducts(), loadCart()])
-	.then(() => {
+async function initAmazonPage() {
+	try {
+		await Promise.all([productCatalog.loadProducts(), loadCart()]);
 		productRenderer.init();
-	})
-	.catch((error) => {
-		console.error('Unable to load products.', error);
-	});
+	}
+	catch (error) {
+		console.error('Unable to initialize Amazon page data.', error);
+	}
+}
+
+initAmazonPage();

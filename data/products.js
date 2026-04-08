@@ -8,33 +8,47 @@ function getProductsUrl() {
   return new URL('../backend/products.json', import.meta.url).href;
 }
 
-function loadProductsFromFile() {
-  return import('node:fs/promises')
-    .then((fs) => fs.readFile(new URL('../backend/products.json', import.meta.url), 'utf-8'))
-    .then((fileContent) => JSON.parse(fileContent));
+async function loadProductsFromFile() {
+  try {
+    const fs = await import('node:fs/promises');
+    const fileContent = await fs.readFile(new URL('../backend/products.json', import.meta.url), 'utf-8');
+    const productsData = JSON.parse(fileContent);
+
+    if (!Array.isArray(productsData)) {
+      throw new Error('Products data must be an array.');
+    }
+
+    return productsData;
+  }
+  catch (error) {
+    throw new Error(`Failed to load products from file fallback. ${error.message}`);
+  }
 }
 
-export function loadProducts() {
-  return fetch(getProductsUrl())
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`Failed to load products: ${response.status}`);
-      }
+export async function loadProducts() {
+  try {
+    const response = await fetch(getProductsUrl());
 
-      return response.json();
-    })
-    .then((productsData) => {
+    if (!response.ok) {
+      throw new Error(`Failed to load products: ${response.status}`);
+    }
+
+    const productsData = await response.json();
+
+    if (!Array.isArray(productsData)) {
+      throw new Error('Products response must be an array.');
+    }
+
+    products = productsData;
+    return products;
+  }
+  catch (error) {
+    if (typeof window === 'undefined') {
+      const productsData = await loadProductsFromFile();
       products = productsData;
       return products;
-    })
-    .catch((error) => {
-      if (typeof window === 'undefined') {
-        return loadProductsFromFile().then((productsData) => {
-          products = productsData;
-          return products;
-        });
-      }
+    }
 
-      throw new Error(`Network error while loading products. ${error.message}`);
-    });
+    throw new Error(`Unable to load products. ${error.message}`);
+  }
 }
