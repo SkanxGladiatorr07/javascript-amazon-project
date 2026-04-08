@@ -19,21 +19,22 @@ export class CheckoutRenderer extends BaseRenderer {
     return this.query('.js-payment-summary-title') || this.query('.payment-summary-title');
   }
 
-  getDeliveryOptionsHTML(productId) {
+  getDeliveryOptionsHTML(productId, selectedDeliveryOptionId) {
     const deliveryGroupName = `delivery-option-${productId}`;
 
-    const deliveryOptionsHTML = this.deliveryService.getAllOptions().map((deliveryOption, index) => {
+    const deliveryOptionsHTML = this.deliveryService.getAllOptions().map((deliveryOption) => {
       const deliveryDateText = DateCalculator.getDeliveryDate(deliveryOption.deliveryDays);
       const shippingPriceText = deliveryOption.isFree()
         ? 'FREE Shipping'
         : `$${Currency.formatCurrency(deliveryOption.priceCents)} - Shipping`;
+      const isChecked = deliveryOption.id === selectedDeliveryOptionId;
 
       return `
       <div class="delivery-option">
         <input
           id="${productId}-${deliveryOption.id}"
           type="radio"
-          ${index === 0 ? 'checked' : ''}
+          ${isChecked ? 'checked' : ''}
           class="delivery-option-input"
           name="${deliveryGroupName}"
           value="${deliveryOption.id}"
@@ -60,7 +61,9 @@ export class CheckoutRenderer extends BaseRenderer {
 
   getCartItemHTMLByProductId(productId, quantity) {
     const product = this.productCatalog.findProductById(productId);
-    const defaultDeliveryOption = this.deliveryService.getDefaultOption();
+    const cartItem = this.cart.findItem(productId);
+    const selectedDeliveryOption = this.deliveryService.findOptionById(cartItem?.deliveryOptionId)
+      || this.deliveryService.getDefaultOption();
 
     if (!product) {
       return '';
@@ -69,7 +72,7 @@ export class CheckoutRenderer extends BaseRenderer {
     return `
     <div class="cart-item-container">
       <div class="delivery-date">
-        Delivery date: ${DateCalculator.getDeliveryDate(defaultDeliveryOption.deliveryDays)}
+        Delivery date: ${DateCalculator.getDeliveryDate(selectedDeliveryOption.deliveryDays)}
       </div>
 
       <div class="cart-item-details-grid">
@@ -111,7 +114,7 @@ export class CheckoutRenderer extends BaseRenderer {
           </div>
         </div>
 
-        ${this.getDeliveryOptionsHTML(productId)}
+        ${this.getDeliveryOptionsHTML(productId, selectedDeliveryOption.id)}
       </div>
     </div>`;
   }
@@ -228,7 +231,7 @@ export class CheckoutRenderer extends BaseRenderer {
     this.queryAll('.delivery-option-input').forEach((input) => {
       input.addEventListener('change', () => {
         this.cart.updateItemDeliveryOption(input.dataset.productId, input.value);
-        this.renderPaymentSummary();
+        this.renderCheckoutPage();
       });
     });
   }

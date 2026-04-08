@@ -25,6 +25,58 @@ async function loadProductsFromFile() {
   }
 }
 
+function validateProductsData(productsData, context) {
+  if (!Array.isArray(productsData)) {
+    throw new Error(`${context} must be an array.`);
+  }
+
+  return productsData;
+}
+
+export function loadProductsWithXhr() {
+  return new Promise((resolve, reject) => {
+    if (typeof XMLHttpRequest === 'undefined') {
+      reject(new Error('XMLHttpRequest is not available in this environment.'));
+      return;
+    }
+
+    const xhr = new XMLHttpRequest();
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status < 200 || xhr.status >= 300) {
+        reject(new Error(`Failed to load products with XHR: ${xhr.status}`));
+        return;
+      }
+
+      try {
+        const productsData = validateProductsData(JSON.parse(xhr.responseText), 'Products response');
+        products = productsData;
+        resolve(products);
+      }
+      catch (error) {
+        reject(new Error(`Failed to parse products response. ${error.message}`));
+      }
+    });
+
+    xhr.addEventListener('error', () => {
+      reject(new Error('Network error while loading products with XHR.'));
+    });
+
+    xhr.open('GET', '/backend/products.json');
+    xhr.send();
+  });
+}
+
+export function loadProductsWithCallback(callback) {
+  loadProducts()
+    .then((productsData) => {
+      callback(null, productsData);
+    })
+    .catch((error) => {
+      callback(error, []);
+    });
+}
+
 export async function loadProducts() {
   try {
     const response = await fetch(getProductsUrl());
@@ -35,9 +87,7 @@ export async function loadProducts() {
 
     const productsData = await response.json();
 
-    if (!Array.isArray(productsData)) {
-      throw new Error('Products response must be an array.');
-    }
+    validateProductsData(productsData, 'Products response');
 
     products = productsData;
     return products;

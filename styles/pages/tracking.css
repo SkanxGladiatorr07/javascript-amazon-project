@@ -79,3 +79,9 @@
   border-radius: 50px;
   width: 50%;
 }
+
+.tracking-error {
+  margin-top: 20px;
+  color: rgb(177, 39, 4);
+  font-weight: 500;
+}
